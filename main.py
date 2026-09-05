@@ -44,6 +44,25 @@ def draw_landmarks(frame, hand_landmarks):
     for point in points:
         cv2.circle(frame, point, 5, (0, 255, 0), -1)
 
+def recognize_gesture(hand_landmarks):
+    """Recognize simple hand gestures using landmark positions."""
+    # so when a fingertip is above its lower joint: tip.y < joint.y,
+    # we can roughly consider that finger raised
+
+    # Fingertip and PIP joint landmark indices
+    index_up = hand_landmarks[8].y < hand_landmarks[6].y
+    middle_up = hand_landmarks[12].y < hand_landmarks[10].y
+    ring_up = hand_landmarks[16].y < hand_landmarks[14].y
+    pinky_up = hand_landmarks[20].y < hand_landmarks[18].y
+
+    # Peace sign: index + middle up, ring + pinky down
+    if index_up and middle_up and not ring_up and not pinky_up:
+        return "PEACE"
+
+    # this is not using the thumb yet, it will be handled later
+
+    return "Unknown"
+
 def main():
     # Configure MediaPipe Hand Landmarker
     base_options = tasks.BaseOptions(
@@ -52,7 +71,7 @@ def main():
 
     options = tasks.vision.HandLandmarkerOptions(
         base_options=base_options,
-        num_hands=2
+        num_hands=1
     )
 
     landmarker = tasks.vision.HandLandmarker.create_from_options(options)
@@ -88,10 +107,6 @@ def main():
         # Detect hand landmarks
         result = landmarker.detect(mp_image)
 
-        # Draw landmarks if hands are detected
-        for hand_landmarks in result.hand_landmarks:
-            draw_landmarks(frame, hand_landmarks)
-
         # Display number of detected hands
         cv2.putText(
             frame,
@@ -102,6 +117,22 @@ def main():
             (0, 255, 0),
             2
         )
+    
+        # Draw landmarks if hands are detected
+        for hand_landmarks in result.hand_landmarks:
+            draw_landmarks(frame, hand_landmarks)
+
+            gesture = recognize_gesture(hand_landmarks)
+
+            cv2.putText(
+                frame,
+                f"Gesture: {gesture}",
+                (20, 80),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2
+            )
 
         # Display the resulting frame
         cv2.imshow('Hand Gesture Recognition', frame)
