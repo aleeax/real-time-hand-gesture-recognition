@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from gesture_recognizer import recognize_gesture
+
 import cv2
 import mediapipe as mp
 import mediapipe.tasks as tasks
