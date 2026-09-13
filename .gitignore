@@ -219,3 +219,9 @@ __marimo__/
 
 # MediaPipe model files
 models/*.task
+
+# Local test images
+data/test_images/
+
+# Trained classifier
+models/*.joblib

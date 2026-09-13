@@ -14,10 +14,14 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
+import joblib
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = PROJECT_ROOT / "data" / "gesture_landmarks.csv"
-
+MODEL_OUTPUT_PATH = (
+    PROJECT_ROOT / "models" / "gesture_classifier.joblib"
+)
 
 def main():
     # Load dataset
@@ -78,6 +82,9 @@ def main():
     print("\nClass order:")
     print(model.classes_)
 
+    # Save the trained model
+    joblib.dump(model, MODEL_OUTPUT_PATH)
+    print(f"\nModel saved to {MODEL_OUTPUT_PATH}")
 
 if __name__ == "__main__":
     main()
