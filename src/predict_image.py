@@ -18,6 +18,26 @@ CLASSIFIER_PATH = (
     PROJECT_ROOT / "models" / "gesture_classifier.joblib"
 )
 
+HAND_CONNECTIONS = [
+    # Thumb
+    (0, 1), (1, 2), (2, 3), (3, 4),
+
+    # Index
+    (0, 5), (5, 6), (6, 7), (7, 8),
+
+    # Middle
+    (5, 9), (9, 10), (10, 11), (11, 12),
+
+    # Ring
+    (9, 13), (13, 14), (14, 15), (15, 16),
+
+    # Pinky
+    (13, 17), (17, 18), (18, 19), (19, 20),
+
+    # Palm
+    (0, 17),
+]
+
 
 def normalize_landmarks(hand_landmarks):
     """Convert landmarks to coordinates relative to the wrist."""
@@ -48,6 +68,50 @@ def create_feature_names():
         ])
 
     return feature_names
+
+def draw_landmarks(image, hand_landmarks):
+    """Draw MediaPipe hand landmarks and connections on an image."""
+
+    height, width, _ = image.shape
+
+    points = []
+
+    # Convert normalized coordinates into image pixel coordinates
+    for landmark in hand_landmarks:
+        x = int(landmark.x * width)
+        y = int(landmark.y * height)
+        points.append((x, y))
+
+    # Draw skeleton connections
+    for start, end in HAND_CONNECTIONS:
+        cv2.line(
+            image,
+            points[start],
+            points[end],
+            (255, 255, 255),
+            2,
+        )
+
+    # Draw the 21 landmarks
+    for index, point in enumerate(points):
+        cv2.circle(
+            image,
+            point,
+            5,
+            (0, 255, 0),
+            -1,
+        )
+
+        # Add landmark number
+        cv2.putText(
+            image,
+            str(index),
+            (point[0] + 5, point[1] - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (0, 255, 0),
+            1,
+        )
 
 
 def main():
@@ -103,9 +167,12 @@ def main():
     print("Hand detected: Yes")
 
     # Extract exactly the same features used during training
+    hand_landmarks = result.hand_landmarks[0]
+
     features = normalize_landmarks(
-        result.hand_landmarks[0]
+        hand_landmarks
     )
+    # this gave us a variable we can reuse for drawing
 
     feature_names = create_feature_names()
 
@@ -118,6 +185,23 @@ def main():
     classifier = joblib.load(CLASSIFIER_PATH)
 
     prediction = classifier.predict(X_new)[0]
+
+    # Draw MediaPipe landmarks on the original image
+    draw_landmarks(
+        image,
+        hand_landmarks
+    )
+
+    # Display classifier prediction
+    cv2.putText(
+        image,
+        f"Prediction: {prediction}",
+        (20, 40),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2,
+    )
 
     print(f"\nPrediction: {prediction}")
 
@@ -139,6 +223,16 @@ def main():
                 f"{probability:.3f}"
             )
 
+    cv2.imshow(
+        "Unseen Gesture Prediction",
+        image
+    )
+
+    print("\nPress any key on the image window to close.")
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
     landmarker.close()
 
 
